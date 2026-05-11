@@ -72,12 +72,12 @@
   tbody tr:hover { background: #fdf4f4; }
   tbody td { padding: 10px 14px; vertical-align: middle; }
   .td-num { font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:1.05rem; color:var(--red); width:36px; }
-  .thumb { width:50px; height:50px; border-radius:3px; border:2px solid var(--gray-lt); overflow:hidden; background:var(--gray-bg); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .2s; }
+  .thumb { width:72px; height:72px; border-radius:3px; border:2px solid var(--gray-lt); overflow:hidden; background:var(--gray-bg); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .2s; }
   .thumb:hover { border-color:var(--red); }
   .thumb img { width:100%; height:100%; object-fit:cover; }
-  .thumb svg { width:22px; height:22px; opacity:.3; }
+  .thumb svg { width:28px; height:28px; opacity:.3; }
   .td-name { font-weight:600; font-size:.97rem; }
-  .sig-box { height:44px; width:130px; border:2px solid var(--gray-lt); border-radius:3px; overflow:hidden; background:var(--white); display:flex; align-items:center; justify-content:center; }
+  .sig-box { height:54px; width:155px; border:2px solid var(--gray-lt); border-radius:3px; overflow:hidden; background:var(--white); display:flex; align-items:center; justify-content:center; }
   .sig-box img { width:100%; height:100%; object-fit:contain; }
   .td-time { font-family:'Barlow Condensed',sans-serif; font-size:.88rem; color:var(--gray-dk); white-space:nowrap; }
   .btn-del { background:none; border:none; cursor:pointer; padding:5px; border-radius:3px; transition:background .15s; }
@@ -155,6 +155,11 @@
     .doc-header-text .dept{font-size:.68rem;}
     thead th:nth-child(5),tbody td:nth-child(5){display:none;}
   }
+
+  /* Lightbox */
+  .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:500; align-items:center; justify-content:center; cursor:pointer; }
+  .lightbox.open { display:flex; }
+  .lightbox img { max-width:90vw; max-height:90vh; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,.6); }
 </style>
 </head>
 <body>
@@ -208,7 +213,7 @@
     </div>
     <div class="meta-cell">
       <div class="lbl">Safety Officer / Host</div>
-      <input id="meta-host" type="text" value="Jorge Vasquez" />
+      <input id="meta-host" type="text" placeholder="e.g. Jorge Vasquez" />
     </div>
     <div class="meta-cell">
       <div class="lbl">Time</div>
@@ -315,6 +320,12 @@
 </div>
 
 <script>
+// Lightbox
+function openPhoto(src){
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+
 // Date
 const now = new Date();
 document.getElementById('date-badge').textContent =
@@ -372,7 +383,7 @@ function render(){
   tb.innerHTML=entries.map((e,i)=>`
     <tr>
       <td class="td-num">${i+1}</td>
-      <td><div class="thumb">${e.photo?`<img src="${e.photo}" alt="${e.first}">`:`<svg viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`}</div></td>
+      <td><div class="thumb" ${e.photo?`onclick="openPhoto('${e.photo}')"`:''}>${e.photo?`<img src="${e.photo}" alt="${e.first}">`:`<svg viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`}</div></td>
       <td class="td-name">${e.first} ${e.last}${e.company?`<div style="font-size:.78rem;color:var(--gray-dk);font-weight:400;">${e.company}</div>`:''}</td>
       <td><div class="sig-box"><img src="${e.sig}" alt="sig"></div></td>
       <td class="td-time">${e.time}</td>
@@ -381,12 +392,107 @@ function render(){
   `).join('');
 }
 
-// Save as HTML — snapshot current page with all data embedded
+// Save as HTML — generate a clean non-editable read-only snapshot
 function saveAsHTML(){
-  const html = document.documentElement.outerHTML;
-  const blob = new Blob([html], {type:'text/html'});
-  const a = document.createElement('a');
   const dateStr = new Date().toISOString().slice(0,10);
+  const timeStr = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+
+  // Gather meta field values
+  const purpose = document.getElementById('meta-purpose').value || '—';
+  const host    = document.getElementById('meta-host').value    || '—';
+  const time    = document.getElementById('meta-time').value    || timeStr;
+  const dateVal = document.getElementById('meta-date').textContent || dateStr;
+
+  // Build attendee rows
+  let rows = '';
+  entries.forEach((e, i) => {
+    rows += `<tr>
+      <td style="padding:10px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;color:#CC1B1B;">${i+1}</td>
+      <td style="padding:10px 14px;">
+        ${e.photo ? `<img src="${e.photo}" style="width:70px;height:70px;object-fit:cover;border-radius:3px;border:2px solid #e8e8e8;">` : '<div style="width:70px;height:70px;background:#f5f5f5;border:2px solid #e8e8e8;border-radius:3px;"></div>'}
+      </td>
+      <td style="padding:10px 14px;font-weight:600;font-size:.97rem;">${e.first} ${e.last}${e.company ? `<div style="font-size:.78rem;color:#555;">${e.company}</div>` : ''}</td>
+      <td style="padding:10px 14px;"><img src="${e.sig}" style="height:50px;width:150px;object-fit:contain;border:2px solid #e8e8e8;border-radius:3px;background:#fff;"></td>
+      <td style="padding:10px 14px;font-family:'Barlow Condensed',sans-serif;font-size:.88rem;color:#555;">${e.time}</td>
+    </tr>`;
+  });
+
+  // Get the embedded logo src
+  const logoImg = document.querySelector('.ysd-logo-img');
+  const logoSrc = logoImg ? logoImg.src : '';
+
+  const doc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>YSD Sign-In — ${dateStr}</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Barlow',sans-serif;background:#f5f5f5;color:#111;}
+  .doc{max-width:860px;margin:0 auto;background:#fff;border:1px solid #ddd;}
+  .doc-header{padding:20px 28px;display:flex;align-items:center;gap:20px;border-bottom:3px solid #CC1B1B;}
+  .doc-header img{width:90px;height:auto;}
+  h1{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;text-transform:uppercase;}
+  h1 span{color:#CC1B1B;}
+  .dept{font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#555;margin-top:6px;}
+  .sheet-title{padding:18px 28px 14px;border-bottom:1px solid #ddd;}
+  .sheet-title h2{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;text-transform:uppercase;}
+  .date-badge{display:inline-block;background:#CC1B1B;color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.9rem;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:2px;margin-top:10px;}
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid #CC1B1B;}
+  .meta-cell{padding:12px 18px;border-right:1px solid #ddd;border-bottom:1px solid #ddd;}
+  .meta-cell:nth-child(even){border-right:none;}
+  .meta-cell.full{grid-column:1/-1;border-right:none;}
+  .lbl{font-family:'Barlow Condensed',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#555;margin-bottom:4px;}
+  .val{font-size:.95rem;font-weight:600;}
+  .att-header{background:#111;padding:12px 18px;display:flex;align-items:center;gap:10px;}
+  .att-header span{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;}
+  .count{background:#CC1B1B;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:.78rem;font-weight:800;padding:2px 9px;border-radius:20px;}
+  table{width:100%;border-collapse:collapse;}
+  thead tr{background:#1e1e1e;}
+  thead th{font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#999;padding:10px 14px;text-align:left;}
+  tbody tr{border-bottom:1px solid #e8e8e8;}
+  .footer{border-top:2px solid #111;padding:14px 28px;background:#f5f5f5;font-size:.78rem;color:#555;font-style:italic;}
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="doc-header">
+    <img src="${logoSrc}" alt="YSD Logo">
+    <div>
+      <h1>YOUNG <span>&amp;</span> SONS<br>DRYWALL</h1>
+      <div class="dept">SAFETY &amp; COMPLIANCE DEPARTMENT &nbsp;|&nbsp; HOUSTON, TX</div>
+    </div>
+  </div>
+  <div class="sheet-title">
+    <h2>Contractor / Visitor Sign-In Sheet</h2>
+    <div class="date-badge">${dateStr.toUpperCase()}</div>
+  </div>
+  <div class="meta-grid">
+    <div class="meta-cell full"><div class="lbl">Location / Office</div><div class="val">Young &amp; Sons Drywall, L.P. — 1614 Elmview Dr, Houston, TX 77080</div></div>
+    <div class="meta-cell"><div class="lbl">Meeting / Purpose</div><div class="val">${purpose}</div></div>
+    <div class="meta-cell"><div class="lbl">Date</div><div class="val">${dateVal}</div></div>
+    <div class="meta-cell"><div class="lbl">Safety Officer / Host</div><div class="val">${host}</div></div>
+    <div class="meta-cell"><div class="lbl">Time</div><div class="val">${time}</div></div>
+  </div>
+  <div class="att-header"><span>Attendees</span><span class="count">${entries.length}</span></div>
+  <table>
+    <thead><tr><th>#</th><th>Photo</th><th>Name &amp; Company</th><th>Signature</th><th>Time In</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="5" style="text-align:center;padding:30px;color:#aaa;font-style:italic;">No attendees recorded.</td></tr>'}</tbody>
+  </table>
+  <div class="footer">Young &amp; Sons Drywall, L.P. &nbsp;&middot;&nbsp; 1614 Elmview Dr, Houston, TX 77080 &nbsp;&middot;&nbsp; Safety &amp; Compliance Dept.</div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+  <img id="lightbox-img" src="" alt="full photo">
+</div>
+</body>
+</html>`;
+
+  const blob = new Blob([doc], {type:'text/html'});
+  const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'YSD_SignIn_' + dateStr + '.html';
   a.click();
